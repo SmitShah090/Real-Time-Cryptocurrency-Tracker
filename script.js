@@ -1,60 +1,98 @@
-const apiUrl = 'https://api.coingecko.com/api/v3/coins/markets';
-const vsCurrency = 'usd';
-let selectedCryptos = JSON.parse(localStorage.getItem('selectedCryptos')) || [];
+// script.js
+const API_URL = "https://api.coingecko.com/api/v3/coins/markets";
+const cryptoTableBody = document.getElementById("crypto-table-body");
+const comparisonContainer = document.getElementById("comparison-container");
+let selectedCryptos = JSON.parse(localStorage.getItem("selectedCryptos")) || [];
+let sortValue = "market_cap_asc";
 
-document.getElementById('sort-options').addEventListener('change', fetchCryptos);
+// Fetch data from CoinGecko API
+async function fetchCryptoData() {
+    console.log(sortValue);
+    const value = sortValue
+    let params = `?vs_currency=usd&order=${value}&per_page=10&page=1&sparkline=false`;
 
-function fetchCryptos() {
-    const sortBy = document.getElementById('sort-options').value;
-    console.log(`${apiUrl}?vs_currency=${vsCurrency}`);
+    const response = await fetch(`${API_URL}${params}`);
+    const data = await response.json();
+    console.log(data);
 
-    fetch(`${apiUrl}?vs_currency=${vsCurrency}&order=${sortBy}&per_page=10&page=1`)
-        .then(response => response.json())
-        .then(data => displayCryptos(data))
-        .catch(error => console.error('Error fetching data:', error));
+    displayCryptos(data);
 }
 
-function displayCryptos(cryptos) {
-    const cryptoList = document.getElementById('crypto-list');
-    cryptoList.innerHTML = cryptos.map(crypto => `
-        <div class="crypto-item">
-          <h3>${crypto.name} (${crypto.symbol.toUpperCase()})</h3>
-          <p>Price: $${crypto.current_price}</p>
-          <p>24h Change: ${crypto.price_change_percentage_24h.toFixed(2)}%</p>
-          <p>Market Cap: $${crypto.market_cap.toLocaleString()}</p>
-          <button onclick="addToComparison('${crypto.id}', '${crypto.name}', '${crypto.current_price}')">Add to Compare</button>
-        </div>
-      `).join('');
+// Display cryptocurrencies in the table
+function displayCryptos(data) {
+    cryptoTableBody.innerHTML = "";
+    data.forEach((crypto) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td>${crypto.name}</td>
+            <td>${crypto.symbol.toUpperCase()}</td>
+            <td>$${crypto.current_price.toFixed(2)}</td>
+            <td class="${crypto.price_change_percentage_24h > 0 ? 'positive' : 'negative'}">
+                ${crypto.price_change_percentage_24h ? crypto.price_change_percentage_24h.toFixed(2) : 0}%
+            </td>
+            <td>$${crypto.market_cap.toLocaleString()}</td>
+            <td><button onclick="addToComparison('${crypto.id}')">Compare</button></td>
+        `;
+        cryptoTableBody.appendChild(row);
+    });
 }
 
-function addToComparison(id, name, price) {
-    if (selectedCryptos.length < 5 && !selectedCryptos.find(crypto => crypto.id === id)) {
-        selectedCryptos.push({ id, name, price });
-        localStorage.setItem('selectedCryptos', JSON.stringify(selectedCryptos));
-        updateComparisonSection();
+// Add cryptocurrency to comparison
+function addToComparison(id) {
+    if (selectedCryptos.length >= 5) {
+        alert("You can only compare up to 5 cryptocurrencies.");
+        return;
+    }
+    if (!selectedCryptos.includes(id)) {
+        selectedCryptos.push(id);
+        localStorage.setItem("selectedCryptos", JSON.stringify(selectedCryptos));
+        updateComparison();
     }
 }
 
-function updateComparisonSection() {
-    const comparisonDiv = document.getElementById('selected-cryptos');
-    comparisonDiv.innerHTML = selectedCryptos.map(crypto => `
-        <div class="crypto-item">
-          <h3>${crypto.name}</h3>
-          <p>Price: $${crypto.price}</p>
-          <button onclick="removeFromComparison('${crypto.id}')">Remove</button>
-        </div>
-      `).join('');
+// Update comparison section
+async function updateComparison() {
+    comparisonContainer.innerHTML = "";
+    const promises = selectedCryptos.map((id) =>
+        fetch(`https://api.coingecko.com/api/v3/coins/${id}`).then((res) => res.json())
+    );
+    const cryptos = await Promise.all(promises);
+    cryptos.forEach((crypto) => {
+        const div = document.createElement("div");
+        div.classList.add("comparison-item");
+        div.innerHTML = `
+            <h3>${crypto.name} (${crypto.symbol.toUpperCase()})</h3>
+            <p>Price: $${crypto.market_data.current_price.usd.toFixed(2)}</p>
+            <p>24h Change: ${crypto.market_data.price_change_percentage_24h ? crypto.market_data.price_change_percentage_24h.toFixed(2) : 0}%</p>
+            <p>Market Cap: $${crypto.market_data.market_cap.usd.toLocaleString()}</p>
+            <button onclick="removeFromComparison('${crypto.id}')">Remove</button>
+        `;
+        comparisonContainer.appendChild(div);
+    });
 }
 
+// Remove cryptocurrency from comparison
 function removeFromComparison(id) {
-    selectedCryptos = selectedCryptos.filter(crypto => crypto.id !== id);
-    localStorage.setItem('selectedCryptos', JSON.stringify(selectedCryptos));
-    updateComparisonSection();
+    selectedCryptos = selectedCryptos.filter((crypto) => crypto !== id);
+    localStorage.setItem("selectedCryptos", JSON.stringify(selectedCryptos));
+    updateComparison();
 }
 
-// Initial data fetch and comparison update
-fetchCryptos();
-updateComparisonSection();
+// Toggle Dark Mode
+function toggleDarkMode() {
+    document.body.classList.toggle('dark-theme');
+    const darkModeEnabled = document.body.classList.contains('dark-theme');
+    localStorage.setItem('darkModeEnabled', darkModeEnabled); // Save dark mode preference to localStorage
+}
 
-// Auto-update data every 60 seconds
-setInterval(fetchCryptos, 60000);
+// Change Sorting Options
+
+document.getElementById("sort-options").addEventListener("change", (event) => {
+    sortValue = event.target.value;
+
+    fetchCryptoData();
+});
+
+// Initialize app
+fetchCryptoData();
+updateComparison();
