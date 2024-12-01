@@ -78,12 +78,23 @@ function removeFromComparison(id) {
     updateComparison();
 }
 
-// Toggle Dark Mode
-function toggleDarkMode() {
-    document.body.classList.toggle('dark-theme');
-    const darkModeEnabled = document.body.classList.contains('dark-theme');
-    localStorage.setItem('darkModeEnabled', darkModeEnabled); // Save dark mode preference to localStorage
-}
+// Toggle font size function
+const toggleFontSize = () => {
+    document.body.classList.toggle("large-font");
+    localStorage.setItem("font-size", document.body.classList.contains("large-font") ? "large" : "normal");
+};
+
+// Load saved theme and font size from local storage
+document.addEventListener("DOMContentLoaded", () => {
+    const savedFontSize = localStorage.getItem("font-size");
+
+    if (savedFontSize === "large") {
+        document.body.classList.add("large-font");
+        document.getElementById("theme-toggle").value = "light"
+    }
+});
+
+document.getElementById("font-size-toggle").addEventListener("change", toggleFontSize);
 
 // Change Sorting Options
 

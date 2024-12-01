@@ -211,30 +211,33 @@ button:hover {
 }
 
 /* Preferences Section */
-#preferences {
+#preferences #display-settings {
     margin-top: 2rem;
     padding: 3rem;
-    background: #1f2937;
+    background: #1e88e5;
     border-radius: 8px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
-#preferences label {
+#preferences label,
+#display-settings label {
     font-size: 1rem;
     color: #f5f5f5;
     margin-right: 1rem;
 }
 
-#preferences select {
+#preferences select,
+#display-settings select {
     padding: 3rem;
     font-size: 1rem;
     border: 1px solid #394150;
     border-radius: 4px;
-    background: #243b55;
+    background: #1e88e5;
     color: white;
 }
 
-#preferences #sort-options {
+#preferences #sort-options,
+#font-size-toggle #sort-options {
     background: #1e88e5;
     color: white;
     border: none;
@@ -242,6 +245,11 @@ button:hover {
     padding: 3rem;
     font-size: 0.9rem;
     cursor: pointer;
+}
+
+/* Large font size */
+body.large-font {
+    font-size: 1.5em;
 }
 
 
